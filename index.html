@@ -113,9 +113,6 @@ button { font-family: var(--corpo); }
 .conferma p { margin: 0; font-size: 0.95rem; }
 .conferma .azioni { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.importo-iniziale { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: var(--superficie); border: 1px dashed var(--linea); }
-.importo-iniziale p { margin: 0; font-size: 0.92rem; color: var(--testo-2); }
-
 /* Modulo */
 .modulo { background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
 .tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--sfondo); padding: 4px; border-radius: 12px; border: 0; margin: 0; min-width: 0; }
@@ -175,11 +172,6 @@ button { font-family: var(--corpo); }
   </header>
 
   <p class="avviso" id="avviso" hidden></p>
-
-  <div class="importo-iniziale" id="importoIniziale" hidden>
-    <p>L'archivio è vuoto su questo database. Vuoi importare le voci di partenza (quelle già segnate prima del trasloco)?</p>
-    <button type="button" class="bottone primario" id="importaBtn">Importa le voci di partenza</button>
-  </div>
 
   <section class="saldo pari" id="saldo" aria-live="polite">
     <p class="saldo-etichetta" id="saldoEtichetta">Carico i conti…</p>
@@ -616,11 +608,9 @@ function creaPdf(JsPDF, dati, nomeFile) {
     $("confermaSi").disabled = false;
   });
 
-  /* Importazione delle voci di partenza, una tantum */
-  $("importaBtn").addEventListener("click", async function () {
+  /* Importazione delle voci di partenza: automatica, al primo avvio, se l'archivio è ancora vuoto */
+  async function importaVociIniziali() {
     if (!col || !metaRef) return;
-    $("importaBtn").disabled = true;
-    $("importaBtn").textContent = "Importo…";
     try {
       var batch = firebase.firestore().batch();
       VOCI_INIZIALI.forEach(function (v) {
@@ -631,13 +621,10 @@ function creaPdf(JsPDF, dati, nomeFile) {
       });
       batch.set(metaRef, { seminato: true, quando: Date.now() });
       await batch.commit();
-      $("importoIniziale").hidden = true;
     } catch (err) {
-      $("importaBtn").disabled = false;
-      $("importaBtn").textContent = "Importa le voci di partenza";
-      messaggio("Non sono riuscito a importare le voci. Riprova tra poco.", true);
+      avviso("Non sono riuscito a importare le voci di partenza. Ricarica la pagina per riprovare.");
     }
-  });
+  }
 
   /* Avvio */
   render();
@@ -662,11 +649,16 @@ function creaPdf(JsPDF, dati, nomeFile) {
     }
     metaRef.get().then(function (snap) {
       var seminato = snap.exists && snap.data().seminato;
+      var primaVolta = true;
       col.orderBy("ordine", "desc").onSnapshot(function (qs) {
         voci = qs.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
         caricato = true;
         avviso("");
-        $("importoIniziale").hidden = !(!seminato && voci.length === 0);
+        if (primaVolta && !seminato && voci.length === 0) {
+          seminato = true;
+          importaVociIniziali();
+        }
+        primaVolta = false;
         render();
       }, function () {
         caricato = true;

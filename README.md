@@ -24,7 +24,7 @@ Da quel momento l'app salva davvero, su un database solo tuo.
 
 ## Le voci di partenza
 
-Le 16 voci che c'erano già nella versione precedente (quella dentro Claude) sono incluse nel codice. Appena apri la pagina con Firebase configurato e l'archivio è ancora vuoto, compare un riquadro "Importa le voci di partenza": un tocco e sono dentro. Dopo l'importazione il riquadro sparisce da solo e non si ripresenta.
+Le 16 voci che c'erano già nella versione precedente (quella dentro Claude) sono incluse nel codice. La primissima volta che qualcuno apre la pagina con Firebase configurato e l'archivio è ancora vuoto, l'app le importa da sola, senza bisogno di toccare nulla. Da quel momento l'archivio non è più vuoto, quindi non si ripete.
 
 ## Struttura
 
