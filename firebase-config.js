@@ -1,10 +1,9 @@
-// Configurazione del progetto Firebase per "Dare e Avere Pub".
-// Sostituisci questi valori finti con quelli veri del tuo progetto Firebase (vedi README.md).
+// Configurazione del progetto Firebase "dare-avere-pub".
 window.FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyC1IaLqrwiouVsOHIr9S8VjBl4jCYPUejE",
+  authDomain: "dare-avere-pub.firebaseapp.com",
+  projectId: "dare-avere-pub",
+  storageBucket: "dare-avere-pub.firebasestorage.app",
+  messagingSenderId: "668911286892",
+  appId: "1:668911286892:web:a8a7a1a4395ad9517df649"
 };
