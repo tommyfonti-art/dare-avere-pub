@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dare e Avere Pub</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dare e Avere">
+<meta name="theme-color" content="#1F5C4A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}
+img{max-width:100%}
+[hidden]:not([hidden=until-found i]){display:none!important}
+</style>
+<style>
+/* Layout: una colonna stretta da telefono. In alto la differenza in grande, poi il modulo
+   per aggiungere, poi i due elenchi (anticipato / preso) come righe di un registro. */
+:root {
+  --sfondo: #F2F4F1;
+  --superficie: #FFFFFF;
+  --testo: #17201C;
+  --testo-2: #56635C;
+  --linea: #D9DFDA;
+  --accento: #1F5C4A;
+  --accento-fg: #FFFFFF;
+  --credito: #1F6B4F;
+  --credito-bg: #E3F0E9;
+  --debito: #A4471F;
+  --debito-bg: #F6E7DE;
+  --corpo: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --cifre: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sfondo: #101514;
+    --superficie: #18201D;
+    --testo: #E8EEEA;
+    --testo-2: #9AA8A0;
+    --linea: #2B3733;
+    --accento: #6CC4A1;
+    --accento-fg: #0B1512;
+    --credito: #7FD1AE;
+    --credito-bg: #17302A;
+    --debito: #E59A72;
+    --debito-bg: #352119;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --sfondo: #101514;
+  --superficie: #18201D;
+  --testo: #E8EEEA;
+  --testo-2: #9AA8A0;
+  --linea: #2B3733;
+  --accento: #6CC4A1;
+  --accento-fg: #0B1512;
+  --credito: #7FD1AE;
+  --credito-bg: #17302A;
+  --debito: #E59A72;
+  --debito-bg: #352119;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--sfondo);
+  color: var(--testo);
+  font-family: var(--corpo);
+  font-size: 16px;
+  line-height: 1.4;
+  padding-inline: 16px;
+  padding-block: 20px 56px;
+}
+.app { max-width: 560px; margin-inline: auto; display: flex; flex-direction: column; gap: 22px; }
+h1 { margin: 0; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.01em; text-wrap: balance; }
+.sotto { margin: 2px 0 0; color: var(--testo-2); font-size: 0.92rem; }
+button { font-family: var(--corpo); }
+:focus-visible { outline: 2px solid var(--accento); outline-offset: 2px; }
+
+.avviso { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--debito-bg); color: var(--debito); font-size: 0.92rem; }
+
+/* Differenza */
+.saldo { border-radius: 18px; padding: 20px 18px; display: flex; flex-direction: column; gap: 12px; background: var(--credito-bg); }
+.saldo.neg { background: var(--debito-bg); }
+.saldo.pari { background: var(--superficie); border: 1px solid var(--linea); }
+.saldo-etichetta { margin: 0; font-size: 0.98rem; font-weight: 600; color: var(--credito); }
+.saldo.neg .saldo-etichetta { color: var(--debito); }
+.saldo.pari .saldo-etichetta { color: var(--testo-2); }
+.saldo-cifra { margin: 0; font-weight: 800; font-size: clamp(2.75rem, 13vw, 4.25rem); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.calcolo { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.calcolo div { display: flex; flex-direction: column; gap: 2px; }
+.calcolo dt { font-size: 0.8rem; color: var(--testo-2); }
+.calcolo dd { margin: 0; font-family: var(--cifre); font-size: 0.98rem; font-variant-numeric: tabular-nums; }
+.chiudi-riga { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.bottone { min-height: 46px; padding: 0 18px; border-radius: 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; border: 1px solid transparent; }
+.primario { background: var(--accento); color: var(--accento-fg); }
+.secondario { background: transparent; color: var(--testo); border-color: var(--linea); }
+.saldo .secondario { border-color: color-mix(in srgb, var(--testo) 25%, transparent); }
+.conferma { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--linea); }
+.conferma p { margin: 0; font-size: 0.95rem; }
+.conferma .azioni { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.importo-iniziale { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 14px; background: var(--superficie); border: 1px dashed var(--linea); }
+.importo-iniziale p { margin: 0; font-size: 0.92rem; color: var(--testo-2); }
+
+/* Modulo */
+.modulo { background: var(--superficie); border: 1px solid var(--linea); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+.tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--sfondo); padding: 4px; border-radius: 12px; border: 0; margin: 0; min-width: 0; }
+.tipo legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.seg { position: relative; display: block; }
+.seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.seg span { display: block; text-align: center; padding: 11px 6px; border-radius: 9px; font-weight: 600; font-size: 0.92rem; color: var(--testo-2); }
+.seg input:checked + span { background: var(--superficie); color: var(--testo); box-shadow: 0 0 0 1px var(--linea); }
+.seg input:focus-visible + span { outline: 2px solid var(--accento); outline-offset: 2px; }
+.campi { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 8px; }
+.campi .nome { grid-column: 1 / -1; }
+.campo.qta { text-align: center; font-family: var(--cifre); }
+.anteprima { margin: 0; font-family: var(--cifre); font-size: 0.88rem; color: var(--testo-2); min-height: 1.2em; }
+.campo { height: 48px; width: 100%; min-width: 0; padding: 0 12px; border-radius: 12px; border: 1px solid var(--linea); background: var(--sfondo); color: var(--testo); font-family: var(--corpo); font-size: 16px; }
+.campo.importo { font-family: var(--cifre); text-align: right; }
+.campo::placeholder { color: var(--testo-2); opacity: 0.8; }
+.azioni-modulo { display: flex; flex-wrap: wrap; gap: 8px; }
+.azioni-modulo .primario { flex: 1 1 10rem; }
+.messaggio { margin: 0; min-height: 1.2em; font-size: 0.88rem; color: var(--testo-2); }
+.messaggio.errore { color: var(--debito); }
+
+/* Elenchi */
+.sezione { display: flex; flex-direction: column; }
+.sez-testa { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--testo); }
+.sez-testa h2 { margin: 0; font-size: 1.05rem; font-weight: 800; }
+.sez-testa .tot { font-family: var(--cifre); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sezione.avere .tot { color: var(--credito); }
+.sezione.dare .tot { color: var(--debito); }
+.voci { list-style: none; margin: 0; padding: 0; }
+.voci li { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--linea); }
+.riga { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 14px; background: none; border: 0; padding: 13px 0; text-align: left; font-size: 1rem; color: var(--testo); cursor: pointer; }
+.riga .testo { min-width: 0; overflow-wrap: anywhere; }
+.riga .dett { display: block; margin-top: 2px; font-family: var(--cifre); font-size: 0.8rem; color: var(--testo-2); }
+.riga .imp { font-family: var(--cifre); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.elimina { background: none; border: 0; color: var(--testo-2); font-size: 0.82rem; padding: 0 8px; min-height: 44px; cursor: pointer; }
+.elimina.sicuro { color: var(--debito); font-weight: 700; }
+.vuoto { margin: 0; padding: 14px 0; color: var(--testo-2); font-size: 0.95rem; }
+
+/* Storico */
+.storico summary { cursor: pointer; font-weight: 800; font-size: 1.05rem; padding: 6px 0; }
+.chiuso { border-bottom: 1px solid var(--linea); padding: 8px 0; }
+.chiuso summary { font-weight: 600; font-size: 0.95rem; display: flex; justify-content: space-between; gap: 12px; }
+.chiuso .esito { font-family: var(--cifre); font-size: 0.88rem; white-space: nowrap; }
+.chiuso ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.chiuso li { display: flex; justify-content: space-between; gap: 12px; font-size: 0.9rem; color: var(--testo-2); }
+.chiuso li span:last-child { font-family: var(--cifre); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<main class="app">
+  <header>
+    <h1>Dare e Avere</h1>
+    <p class="sotto">Quello che pago io per il pub e quello che prendo dal pub</p>
+  </header>
+
+  <p class="avviso" id="avviso" hidden></p>
+
+  <div class="importo-iniziale" id="importoIniziale" hidden>
+    <p>L'archivio è vuoto su questo database. Vuoi importare le voci di partenza (quelle già segnate prima del trasloco)?</p>
+    <button type="button" class="bottone primario" id="importaBtn">Importa le voci di partenza</button>
+  </div>
+
+  <section class="saldo pari" id="saldo" aria-live="polite">
+    <p class="saldo-etichetta" id="saldoEtichetta">Carico i conti…</p>
+    <p class="saldo-cifra" id="saldoCifra">0,00 €</p>
+    <dl class="calcolo">
+      <div><dt>Ho anticipato io</dt><dd id="totAvere">0,00 €</dd></div>
+      <div><dt>Ho preso dal pub</dt><dd id="totDare">− 0,00 €</dd></div>
+    </dl>
+    <div class="chiudi-riga">
+      <button type="button" class="bottone secondario" id="scarica" hidden>Scarica il PDF</button>
+      <button type="button" class="bottone secondario" id="chiudi" hidden>Chiudi il conto</button>
+    </div>
+    <div class="conferma" id="conferma" hidden>
+      <p id="confermaTesto"></p>
+      <div class="azioni">
+        <button type="button" class="bottone primario" id="confermaSi">Sì, chiudi il conto</button>
+        <button type="button" class="bottone secondario" id="confermaNo">Annulla</button>
+      </div>
+    </div>
+  </section>
+
+  <form class="modulo" id="modulo" autocomplete="off">
+    <fieldset class="tipo">
+      <legend>Che tipo di voce è</legend>
+      <label class="seg"><input type="radio" name="tipo" value="avere" checked><span>Ho pagato io</span></label>
+      <label class="seg"><input type="radio" name="tipo" value="dare"><span>Ho preso dal pub</span></label>
+    </fieldset>
+    <div class="campi">
+      <input class="campo nome" id="testo" type="text" placeholder="Cosa, per esempio prosecco" aria-label="Cosa" maxlength="80">
+      <input class="campo qta" id="qta" type="text" inputmode="decimal" value="1" aria-label="Quantità">
+      <input class="campo importo" id="importo" type="text" inputmode="decimal" placeholder="Prezzo di uno, in €" aria-label="Prezzo di uno in euro">
+    </div>
+    <p class="anteprima" id="anteprima" aria-live="polite"></p>
+    <div class="azioni-modulo">
+      <button type="submit" class="bottone primario" id="salva">Aggiungi</button>
+      <button type="button" class="bottone secondario" id="annulla" hidden>Annulla</button>
+    </div>
+    <p class="messaggio" id="messaggio" role="status"></p>
+  </form>
+
+  <section class="sezione avere">
+    <div class="sez-testa"><h2>Ho pagato io per il pub</h2><span class="tot" id="totaleAvere">0,00 €</span></div>
+    <ul class="voci" id="listaAvere"></ul>
+  </section>
+
+  <section class="sezione dare">
+    <div class="sez-testa"><h2>Ho preso dal pub</h2><span class="tot" id="totaleDare">0,00 €</span></div>
+    <ul class="voci" id="listaDare"></ul>
+  </section>
+
+  <section class="storico" id="storico" hidden>
+    <details>
+      <summary>Conti chiusi</summary>
+      <div id="storicoLista"></div>
+    </details>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/*PDF-INIZIO*/
+function creaPdf(JsPDF, dati, nomeFile) {
+  var doc = new JsPDF({ unit: "mm", format: "a4" });
+  var M = 18, R = 192, y = 20;
+  var VERDE = [31, 92, 74], INCHIOSTRO = [23, 32, 28], GRIGIO = [90, 100, 95];
+  function e(c) {
+    return (c / 100).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/ /g, " ");
+  }
+  function q(v) { return String(v.qta != null ? v.qta : 1).replace(".", ","); }
+  function u(v) { return v.unit != null ? v.unit : v.cent; }
+  function somma(a) { return a.reduce(function (s, v) { return s + v.cent; }, 0); }
+  function ctrl(h) { if (y + h > 282) { doc.addPage(); y = 20; } }
+  function colore(c) { doc.setTextColor(c[0], c[1], c[2]); }
+  var tA = somma(dati.avere), tD = somma(dati.dare), diff = tA - tD;
+
+  /* Testata */
+  colore(INCHIOSTRO);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.text("Conto con il pub", M, y);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11); colore(GRIGIO);
+  doc.text(dati.data, R, y, { align: "right" });
+  y += 5;
+  doc.setDrawColor(INCHIOSTRO[0], INCHIOSTRO[1], INCHIOSTRO[2]); doc.setLineWidth(0.6); doc.line(M, y, R, y);
+  y += 9;
+
+  function sezione(titolo, spiega, arr, etichettaTot) {
+    ctrl(40);
+    doc.setFillColor(VERDE[0], VERDE[1], VERDE[2]); doc.rect(M, y, R - M, 10, "F");
+    doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.text(titolo, M + 4, y + 6.8);
+    y += 10;
+    colore(GRIGIO); doc.setFont("helvetica", "normal"); doc.setFontSize(9.5);
+    doc.text(spiega, M, y + 6);
+    y += 9;
+    colore(INCHIOSTRO); doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+    doc.text("COSA", M + 2, y + 4);
+    doc.text("QUANTITÀ", 108, y + 4, { align: "right" });
+    doc.text("PREZZO DI UNO (euro)", 146, y + 4, { align: "right" });
+    doc.text("TOTALE (euro)", R - 2, y + 4, { align: "right" });
+    y += 6;
+    doc.setDrawColor(INCHIOSTRO[0], INCHIOSTRO[1], INCHIOSTRO[2]); doc.setLineWidth(0.3); doc.line(M, y, R, y);
+    doc.setFontSize(11);
+    arr.forEach(function (v) {
+      var righe = doc.splitTextToSize(v.testo, 78);
+      var h = Math.max(7.5, righe.length * 5 + 3);
+      ctrl(h);
+      colore(INCHIOSTRO); doc.setFont("helvetica", "normal");
+      doc.text(righe, M + 2, y + 5.3);
+      doc.text(q(v), 108, y + 5.3, { align: "right" });
+      doc.text(e(u(v)), 146, y + 5.3, { align: "right" });
+      doc.setFont("helvetica", "bold"); doc.text(e(v.cent), R - 2, y + 5.3, { align: "right" });
+      y += h;
+      doc.setDrawColor(210, 216, 212); doc.setLineWidth(0.2); doc.line(M, y, R, y);
+    });
+    if (!arr.length) { colore(GRIGIO); doc.setFont("helvetica", "normal"); doc.text("Nessuna voce", M + 2, y + 6); y += 9; }
+    ctrl(14);
+    y += 2;
+    doc.setFillColor(232, 240, 235); doc.rect(M, y, R - M, 10, "F");
+    colore(INCHIOSTRO); doc.setFont("helvetica", "bold"); doc.setFontSize(11.5);
+    doc.text(etichettaTot, M + 4, y + 6.8);
+    doc.text(e(somma(arr)) + " euro", R - 2, y + 6.8, { align: "right" });
+    y += 15;
+  }
+
+  sezione("DARE: quello che ho preso dal pub", "Cose che ho preso io dal pub, le devo pagare io.", dati.dare, "Totale che devo dare");
+  sezione("AVERE: quello che ho pagato io per il pub", "Spese che ho fatto io per il pub, me le deve il pub.", dati.avere, "Totale che devo avere");
+
+  /* Differenza */
+  ctrl(42);
+  var tinta = diff > 0 ? [227, 240, 233] : diff < 0 ? [246, 231, 222] : [236, 238, 236];
+  doc.setFillColor(tinta[0], tinta[1], tinta[2]); doc.rect(M, y, R - M, 38, "F");
+  colore(INCHIOSTRO); doc.setFont("helvetica", "normal"); doc.setFontSize(12);
+  doc.text(diff > 0 ? "Il pub mi deve" : diff < 0 ? "Io devo al pub" : "Conto pari", M + 5, y + 10);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(26);
+  doc.text(e(Math.abs(diff)) + " euro", M + 5, y + 24);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); colore([70, 80, 75]);
+  doc.text("Totale avere " + e(tA) + "  -  Totale dare " + e(tD) + "  =  " + (diff < 0 ? "-" : "") + e(Math.abs(diff)) + " euro", M + 5, y + 33);
+  doc.save(nomeFile);
+}
+/*PDF-FINE*/
+</script>
+<script>
+(function () {
+  var euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" });
+  function fmt(c) { return euro.format(c / 100); }
+  function $(id) { return document.getElementById(id); }
+
+  var voci = [];
+  var caricato = false;
+  var col = null;
+  var metaRef = null;
+  var modifica = null;
+  var eliminaId = null;
+  var eliminaTimer = null;
+
+  /* Voci di partenza: quelle già segnate prima del trasloco su GitHub/Firebase.
+     Compaiono solo come proposta di importazione se l'archivio è vuoto. */
+  var VOCI_INIZIALI = [
+    { id: "a01", tipo: "avere", testo: "Neon 150 cm", cent: 900, ordine: 100, chiuso: null },
+    { id: "a02", tipo: "avere", testo: "Pennarelli", cent: 490, ordine: 99, chiuso: null },
+    { id: "a03", tipo: "avere", testo: "Arbre Magique", cent: 220, ordine: 98, chiuso: null },
+    { id: "a04", tipo: "avere", testo: "Starter guanti", cent: 340, ordine: 97, chiuso: null },
+    { id: "a05", tipo: "avere", testo: "Lavaggio", cent: 1800, ordine: 96, chiuso: null },
+    { id: "a06", tipo: "avere", testo: "Superbag", cent: 1500, ordine: 95, chiuso: null },
+    { id: "a07", tipo: "avere", testo: "Foglio ordini", cent: 190, ordine: 94, chiuso: null },
+    { id: "a08", tipo: "avere", testo: "Tisana trop.", cent: 5980, ordine: 93, chiuso: null },
+    { id: "a09", tipo: "avere", testo: "WC", cent: 790, ordine: 92, chiuso: null },
+    { id: "a10", tipo: "avere", testo: "Adesivi bancone e fascette", cent: 145, ordine: 91, chiuso: null },
+    { id: "a11", tipo: "avere", testo: "Spideino", cent: 809, unit: 809, qta: 1, ordine: 1790884911056, chiuso: null },
+    { id: "d01", tipo: "dare", testo: "Birre", cent: 1050, ordine: 100, chiuso: null },
+    { id: "d02", tipo: "dare", testo: "Camparini prosecco", cent: 2900, ordine: 99, chiuso: null },
+    { id: "d03", tipo: "dare", testo: "Lavaggio spine Gibo", cent: 100, ordine: 98, chiuso: null },
+    { id: "d04", tipo: "dare", testo: "Melone", cent: 260, ordine: 97, chiuso: null },
+    { id: "d05", tipo: "dare", testo: "Fagioli", cent: 450, ordine: 96, chiuso: null }
+  ];
+
+  function parseImporto(s) {
+    var t = String(s).replace(/€/g, "").replace(/\s+/g, "");
+    if (!t) return null;
+    var tot = 0;
+    var parti = t.split("+");
+    for (var i = 0; i < parti.length; i++) {
+      if (!/^\d+([.,]\d{1,2})?$/.test(parti[i])) return null;
+      tot += Math.round(parseFloat(parti[i].replace(",", ".")) * 100);
+    }
+    return tot > 0 ? tot : null;
+  }
+  function parseQta(s) {
+    var t = String(s).trim().replace(",", ".");
+    if (!/^\d+(\.\d{1,3})?$/.test(t)) return null;
+    var q = parseFloat(t);
+    return q > 0 ? q : null;
+  }
+  function fmtQta(q) { return new Intl.NumberFormat("it-IT", { maximumFractionDigits: 3 }).format(q); }
+  function quantita(v) { return v.qta != null ? v.qta : 1; }
+  function unitaria(v) { return v.unit != null ? v.unit : (v.cent || 0); }
+  function somma(a) { return a.reduce(function (s, v) { return s + (v.cent || 0); }, 0); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function messaggio(t, errore) {
+    var m = $("messaggio");
+    m.textContent = t || "";
+    m.className = "messaggio" + (errore ? " errore" : "");
+  }
+  function avviso(t) {
+    var a = $("avviso");
+    a.hidden = !t;
+    a.textContent = t || "";
+  }
+
+  /* Scrittura: su Firestore se configurato, altrimenti solo in questa pagina (si perde ricaricando) */
+  function ordina() { voci.sort(function (a, b) { return (b.ordine || 0) - (a.ordine || 0); }); }
+  async function crea(d) {
+    if (col) { await col.add(d); return; }
+    voci.push(Object.assign({ id: "l" + Date.now() + Math.random() }, d));
+    ordina(); render();
+  }
+  async function aggiorna(id, patch) {
+    if (col) { await col.doc(id).update(patch); return; }
+    voci.forEach(function (v) { if (v.id === id) Object.assign(v, patch); });
+    render();
+  }
+  async function elimina(id) {
+    if (col) { await col.doc(id).delete(); return; }
+    voci = voci.filter(function (v) { return v.id !== id; });
+    render();
+  }
+
+  function testoSaldo(diff, passato) {
+    if (diff > 0) return passato ? "Il pub ti doveva " + fmt(diff) : "Il pub ti deve";
+    if (diff < 0) return passato ? "Dovevi al pub " + fmt(-diff) : "Tu devi al pub";
+    return passato ? "Conto pari" : "Siete pari";
+  }
+
+  function riga(v) {
+    var li = el("li");
+    var b = el("button", "riga");
+    b.type = "button";
+    b.setAttribute("aria-label", "Modifica " + v.testo);
+    var nome = el("span", "testo", v.testo);
+    if (quantita(v) !== 1) nome.appendChild(el("span", "dett", fmtQta(quantita(v)) + " × " + fmt(unitaria(v))));
+    b.appendChild(nome);
+    b.appendChild(el("span", "imp", fmt(v.cent || 0)));
+    b.addEventListener("click", function () { avviaModifica(v); });
+    var d = el("button", "elimina", eliminaId === v.id ? "Conferma" : "Elimina");
+    d.type = "button";
+    if (eliminaId === v.id) d.classList.add("sicuro");
+    d.setAttribute("aria-label", "Elimina " + v.testo);
+    d.addEventListener("click", function () { clickElimina(v.id); });
+    li.appendChild(b);
+    li.appendChild(d);
+    return li;
+  }
+  function riempi(ul, arr) {
+    ul.replaceChildren();
+    if (!arr.length) {
+      var li = el("li");
+      li.appendChild(el("p", "vuoto", caricato ? "Nessuna voce. Aggiungine una nel modulo qui sopra." : "Carico le voci…"));
+      ul.appendChild(li);
+      return;
+    }
+    arr.forEach(function (v) { ul.appendChild(riga(v)); });
+  }
+
+  function render() {
+    var aperte = voci.filter(function (v) { return !v.chiuso; });
+    var avere = aperte.filter(function (v) { return v.tipo === "avere"; });
+    var dare = aperte.filter(function (v) { return v.tipo === "dare"; });
+    var tA = somma(avere), tD = somma(dare), diff = tA - tD;
+
+    $("saldo").className = "saldo " + (diff > 0 ? "pos" : diff < 0 ? "neg" : "pari");
+    $("saldoEtichetta").textContent = caricato ? testoSaldo(diff, false) : "Carico i conti…";
+    $("saldoCifra").textContent = fmt(Math.abs(diff));
+    $("totAvere").textContent = fmt(tA);
+    $("totDare").textContent = "− " + fmt(tD);
+    $("totaleAvere").textContent = fmt(tA);
+    $("totaleDare").textContent = fmt(tD);
+    $("chiudi").hidden = aperte.length === 0;
+    $("scarica").hidden = aperte.length === 0;
+    if (!aperte.length) $("conferma").hidden = true;
+
+    riempi($("listaAvere"), avere);
+    riempi($("listaDare"), dare);
+    storico();
+  }
+
+  function storico() {
+    var chiuse = voci.filter(function (v) { return v.chiuso; });
+    $("storico").hidden = chiuse.length === 0;
+    var cont = $("storicoLista");
+    cont.replaceChildren();
+    var gruppi = {};
+    chiuse.forEach(function (v) { (gruppi[v.chiuso] = gruppi[v.chiuso] || []).push(v); });
+    Object.keys(gruppi).map(Number).sort(function (a, b) { return b - a; }).forEach(function (k) {
+      var arr = gruppi[k];
+      var a = somma(arr.filter(function (v) { return v.tipo === "avere"; }));
+      var d = somma(arr.filter(function (v) { return v.tipo === "dare"; }));
+      var det = el("details", "chiuso");
+      var sum = el("summary");
+      sum.appendChild(el("span", "", new Date(k).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })));
+      sum.appendChild(el("span", "esito", testoSaldo(a - d, true)));
+      det.appendChild(sum);
+      var ul = el("ul");
+      arr.forEach(function (v) {
+        var li = el("li");
+        li.appendChild(el("span", "", v.testo));
+        li.appendChild(el("span", "", (v.tipo === "avere" ? "+ " : "− ") + fmt(v.cent || 0)));
+        ul.appendChild(li);
+      });
+      det.appendChild(ul);
+      cont.appendChild(det);
+    });
+  }
+
+  /* Elimina con doppio tocco */
+  function clickElimina(id) {
+    if (eliminaId === id) {
+      clearTimeout(eliminaTimer);
+      eliminaId = null;
+      elimina(id).catch(function () { messaggio("Non sono riuscito a eliminare. Riprova tra poco.", true); });
+      return;
+    }
+    eliminaId = id;
+    clearTimeout(eliminaTimer);
+    eliminaTimer = setTimeout(function () { eliminaId = null; render(); }, 3000);
+    render();
+  }
+
+  /* Modifica */
+  function avviaModifica(v) {
+    modifica = v.id;
+    var r = document.querySelector('input[name="tipo"][value="' + v.tipo + '"]');
+    if (r) r.checked = true;
+    $("testo").value = v.testo;
+    $("qta").value = String(quantita(v)).replace(".", ",");
+    $("importo").value = (unitaria(v) / 100).toFixed(2).replace(".", ",");
+    anteprima();
+    $("salva").textContent = "Salva modifica";
+    $("annulla").hidden = false;
+    messaggio("");
+    var ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    $("modulo").scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "center" });
+    $("testo").focus();
+  }
+  function azzeraModulo() {
+    modifica = null;
+    $("testo").value = "";
+    $("qta").value = "1";
+    $("importo").value = "";
+    anteprima();
+    $("salva").textContent = "Aggiungi";
+    $("annulla").hidden = true;
+  }
+  function anteprima() {
+    var q = parseQta($("qta").value), u = parseImporto($("importo").value);
+    $("anteprima").textContent = (q && u && q !== 1) ? fmtQta(q) + " × " + fmt(u) + " = " + fmt(Math.round(q * u)) : "";
+  }
+  $("qta").addEventListener("input", anteprima);
+  $("importo").addEventListener("input", anteprima);
+  $("annulla").addEventListener("click", function () { azzeraModulo(); messaggio(""); });
+
+  $("modulo").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var testo = $("testo").value.trim();
+    var qta = parseQta($("qta").value);
+    var unit = parseImporto($("importo").value);
+    var tipo = document.querySelector('input[name="tipo"]:checked').value;
+    if (!testo) { messaggio("Scrivi cosa hai preso o pagato.", true); $("testo").focus(); return; }
+    if (!qta) { messaggio("Scrivi una quantità valida, per esempio 3.", true); $("qta").focus(); return; }
+    if (!unit) { messaggio("Scrivi un prezzo valido, per esempio 4,50 oppure 1,20+3.", true); $("importo").focus(); return; }
+    var cent = Math.round(qta * unit);
+    try {
+      if (modifica) {
+        await aggiorna(modifica, { tipo: tipo, testo: testo, qta: qta, unit: unit, cent: cent });
+        messaggio("Modifica salvata.");
+        azzeraModulo();
+      } else {
+        await crea({ tipo: tipo, testo: testo, qta: qta, unit: unit, cent: cent, ordine: Date.now(), chiuso: null });
+        messaggio("Aggiunto: " + testo + ", " + fmt(cent) + ".");
+        $("testo").value = "";
+        $("qta").value = "1";
+        $("importo").value = "";
+        anteprima();
+        $("testo").focus();
+      }
+    } catch (err) {
+      messaggio("Non sono riuscito a salvare. Riprova tra poco.", true);
+    }
+  });
+
+  /* Scarico della lista: un PDF da inviare al pub, salvato direttamente dal browser */
+  $("scarica").addEventListener("click", function () {
+    var JsPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!JsPDF) { messaggio("Non riesco a preparare il PDF. Ricarica la pagina e riprova.", true); return; }
+    var aperte = voci.filter(function (v) { return !v.chiuso; });
+    var d = new Date();
+    var dati = {
+      data: d.toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" }),
+      avere: aperte.filter(function (v) { return v.tipo === "avere"; }),
+      dare: aperte.filter(function (v) { return v.tipo === "dare"; })
+    };
+    var nomeFile = "conto-pub-" + d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + ".pdf";
+    try {
+      creaPdf(JsPDF, dati, nomeFile);
+      messaggio("PDF scaricato.");
+    } catch (err) {
+      messaggio("Non sono riuscito a scaricare il PDF. Riprova tra poco.", true);
+    }
+  });
+
+  /* Chiusura del conto */
+  $("chiudi").addEventListener("click", function () {
+    var aperte = voci.filter(function (v) { return !v.chiuso; });
+    var diff = somma(aperte.filter(function (v) { return v.tipo === "avere"; })) - somma(aperte.filter(function (v) { return v.tipo === "dare"; }));
+    $("confermaTesto").textContent = (diff === 0 ? "Chiudere il conto? Siete pari." : "Chiudere il conto? " + testoSaldo(diff, true) + ".") +
+      " Le " + aperte.length + " voci passano in Conti chiusi e si riparte da zero.";
+    $("conferma").hidden = false;
+  });
+  $("confermaNo").addEventListener("click", function () { $("conferma").hidden = true; });
+  $("confermaSi").addEventListener("click", async function () {
+    var ts = Date.now();
+    var aperte = voci.filter(function (v) { return !v.chiuso; });
+    $("confermaSi").disabled = true;
+    try {
+      for (var i = 0; i < aperte.length; i++) await aggiorna(aperte[i].id, { chiuso: ts });
+      $("conferma").hidden = true;
+      messaggio("Conto chiuso.");
+    } catch (err) {
+      messaggio("Non sono riuscito a chiudere tutto il conto. Riprova.", true);
+    }
+    $("confermaSi").disabled = false;
+  });
+
+  /* Importazione delle voci di partenza, una tantum */
+  $("importaBtn").addEventListener("click", async function () {
+    if (!col || !metaRef) return;
+    $("importaBtn").disabled = true;
+    $("importaBtn").textContent = "Importo…";
+    try {
+      var batch = firebase.firestore().batch();
+      VOCI_INIZIALI.forEach(function (v) {
+        var ref = col.doc(v.id);
+        var d = Object.assign({}, v);
+        delete d.id;
+        batch.set(ref, d);
+      });
+      batch.set(metaRef, { seminato: true, quando: Date.now() });
+      await batch.commit();
+      $("importoIniziale").hidden = true;
+    } catch (err) {
+      $("importaBtn").disabled = false;
+      $("importaBtn").textContent = "Importa le voci di partenza";
+      messaggio("Non sono riuscito a importare le voci. Riprova tra poco.", true);
+    }
+  });
+
+  /* Avvio */
+  render();
+  (function () {
+    var cfg = window.FIREBASE_CONFIG;
+    if (!cfg || !cfg.apiKey || cfg.apiKey === "YOUR_API_KEY") {
+      caricato = true;
+      avviso("Non posso salvare i conti da qui: Firebase non è ancora configurato (vedi README.md).");
+      render();
+      return;
+    }
+    try {
+      firebase.initializeApp(cfg);
+      var db = firebase.firestore();
+      col = db.collection("voci");
+      metaRef = db.doc("meta/stato");
+    } catch (e) {
+      caricato = true;
+      avviso("Non riesco a collegarmi al salvataggio. Ricarica la pagina.");
+      render();
+      return;
+    }
+    metaRef.get().then(function (snap) {
+      var seminato = snap.exists && snap.data().seminato;
+      col.orderBy("ordine", "desc").onSnapshot(function (qs) {
+        voci = qs.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+        caricato = true;
+        avviso("");
+        $("importoIniziale").hidden = !(!seminato && voci.length === 0);
+        render();
+      }, function () {
+        caricato = true;
+        avviso("Non riesco a leggere i conti salvati. Ricarica la pagina.");
+        render();
+      });
+    }).catch(function () {
+      caricato = true;
+      avviso("Non riesco a leggere i conti salvati. Ricarica la pagina.");
+      render();
+    });
+  })();
+})();
+</script>
+
+</body>
+</html>
