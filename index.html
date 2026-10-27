@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="it">
-<head><meta name="versione-app" content="2026-10-24b">
+<head><meta name="versione-app" content="2026-10-27a">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dare e Avere Pub</title>
@@ -16,7 +16,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="accesso.js"></script>
 <style>
 :root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -647,6 +649,7 @@ function creaPdf(JsPDF, dati, nomeFile) {
       render();
       return;
     }
+    accessoRichiesto("Dare e Avere Pub", function () {
     metaRef.get().then(function (snap) {
       var seminato = snap.exists && snap.data().seminato;
       var primaVolta = true;
@@ -669,6 +672,7 @@ function creaPdf(JsPDF, dati, nomeFile) {
       caricato = true;
       avviso("Non riesco a leggere i conti salvati. Ricarica la pagina.");
       render();
+    });
     });
   })();
 })();
