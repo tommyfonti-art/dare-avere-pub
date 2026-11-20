@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="it">
-<head><meta name="versione-app" content="2026-10-27a">
+<head><meta name="versione-app" content="2026-11-20a">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Dare e Avere Pub</title>
@@ -386,6 +386,12 @@ function creaPdf(JsPDF, dati, nomeFile) {
     a.hidden = !t;
     a.textContent = t || "";
   }
+  /* Aggiunge al messaggio il codice dell'errore del database, così si capisce il motivo vero */
+  function conCodice(t, err) {
+    if (err) console.error("Dare e Avere, errore:", err);
+    var c = err && err.code ? String(err.code).replace("firestore/", "") : "";
+    return c ? t + " (codice: " + c + ")" : t;
+  }
 
   /* Scrittura: su Firestore se configurato, altrimenti solo in questa pagina (si perde ricaricando) */
   function ordina() { voci.sort(function (a, b) { return (b.ordine || 0) - (a.ordine || 0); }); }
@@ -496,7 +502,7 @@ function creaPdf(JsPDF, dati, nomeFile) {
     if (eliminaId === id) {
       clearTimeout(eliminaTimer);
       eliminaId = null;
-      elimina(id).catch(function () { messaggio("Non sono riuscito a eliminare. Riprova tra poco.", true); });
+      elimina(id).catch(function (err) { messaggio(conCodice("Non sono riuscito a eliminare. Riprova tra poco.", err), true); });
       return;
     }
     eliminaId = id;
@@ -548,6 +554,8 @@ function creaPdf(JsPDF, dati, nomeFile) {
     if (!qta) { messaggio("Scrivi una quantità valida, per esempio 3.", true); $("qta").focus(); return; }
     if (!unit) { messaggio("Scrivi un prezzo valido, per esempio 4,50 oppure 1,20+3.", true); $("importo").focus(); return; }
     var cent = Math.round(qta * unit);
+    /* Se il database non risponde, la scrittura resta in coda e non dà errore: lo dico io dopo qualche secondo */
+    var attesa = setTimeout(function () { messaggio("Sto ancora salvando… controlla la connessione."); }, 8000);
     try {
       if (modifica) {
         await aggiorna(modifica, { tipo: tipo, testo: testo, qta: qta, unit: unit, cent: cent });
@@ -563,7 +571,9 @@ function creaPdf(JsPDF, dati, nomeFile) {
         $("testo").focus();
       }
     } catch (err) {
-      messaggio("Non sono riuscito a salvare. Riprova tra poco.", true);
+      messaggio(conCodice("Non sono riuscito a salvare. Riprova tra poco.", err), true);
+    } finally {
+      clearTimeout(attesa);
     }
   });
 
@@ -601,11 +611,18 @@ function creaPdf(JsPDF, dati, nomeFile) {
     var aperte = voci.filter(function (v) { return !v.chiuso; });
     $("confermaSi").disabled = true;
     try {
-      for (var i = 0; i < aperte.length; i++) await aggiorna(aperte[i].id, { chiuso: ts });
+      if (col) {
+        /* Tutto insieme: o si chiude il conto intero o non si chiude niente, mai a metà */
+        var lotto = firebase.firestore().batch();
+        aperte.forEach(function (v) { lotto.update(col.doc(v.id), { chiuso: ts }); });
+        await lotto.commit();
+      } else {
+        for (var i = 0; i < aperte.length; i++) await aggiorna(aperte[i].id, { chiuso: ts });
+      }
       $("conferma").hidden = true;
       messaggio("Conto chiuso.");
     } catch (err) {
-      messaggio("Non sono riuscito a chiudere tutto il conto. Riprova.", true);
+      messaggio(conCodice("Non sono riuscito a chiudere il conto. Non è cambiato niente, riprova.", err), true);
     }
     $("confermaSi").disabled = false;
   });
