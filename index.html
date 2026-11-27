@@ -2,7 +2,7 @@
 <html lang="it">
 <head><meta name="versione-app" content="2026-11-20a">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Dare e Avere Pub</title>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -164,7 +164,7 @@ button { font-family: var(--corpo); }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
-</head>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%}</style></head>
 <body>
 
 <main class="app">
@@ -230,6 +230,7 @@ button { font-family: var(--corpo); }
       <div id="storicoLista"></div>
     </details>
   </section>
+  <p style="text-align:center;margin:28px 0 12px"><button type="button" class="bottone secondario" id="scaricaDati">Scarica tutti i dati (copia di sicurezza)</button></p>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -597,6 +598,17 @@ function creaPdf(JsPDF, dati, nomeFile) {
     }
   });
 
+  /* Copia di sicurezza: un file con tutte le voci, anche quelle dei conti già chiusi */
+  $("scaricaDati").addEventListener("click", function () {
+    var d = new Date();
+    var nome = "dare-avere-" + d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + ".json";
+    var blob = new Blob([JSON.stringify({ app: "Dare e Avere Pub", salvato: d.toISOString(), voci: voci }, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    messaggio("File con tutte le voci scaricato.");
+  });
+
   /* Chiusura del conto */
   $("chiudi").addEventListener("click", function () {
     var aperte = voci.filter(function (v) { return !v.chiuso; });
@@ -727,5 +739,6 @@ function creaPdf(JsPDF, dati, nomeFile) {
   }catch(e){}
 })();
 </script>
+<!-- niente zoom: il pizzico è bloccato qui, il doppio tocco da touch-action (27 novembre) --><script>(function(){var b=function(e){e.preventDefault()};["gesturestart","gesturechange","gestureend"].forEach(function(n){document.addEventListener(n,b,{passive:false})});document.addEventListener("touchmove",function(e){if(e.touches.length>1)e.preventDefault()},{passive:false})})();</script>
 </body>
 </html>
